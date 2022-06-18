@@ -5,12 +5,14 @@ import { Link } from 'react-router-dom'
 import { getCartItems } from '../redux/reducers/cartSlice'
 import { useSelector } from 'react-redux'
 import { Snackbar } from '@mui/material'
+import { computeCartTotal } from '../calculation'
 
 const ProductList = () => {
 
     const { cartItems } = useSelector(getCartItems);
     const [currentCart, setCurrentCart] = useState(cartItems);
     const [snackBarOpen, setSnackBarOpen] = useState(false);
+    const [cartQuantity, setCartQuantity] = useState(0);
 
     // Display the snackbar notification when cart is updated
     useEffect(() => {
@@ -21,6 +23,9 @@ const ProductList = () => {
                 setSnackBarOpen(false);
             }, 2000);
         }
+        // Update the cart quantity in label
+        const { itemQuantity } = computeCartTotal(cartItems);
+        setCartQuantity(itemQuantity);
     }, [cartItems]);
 
     return (
@@ -40,7 +45,7 @@ const ProductList = () => {
                 to="cart"
             >
                 <i className="fa-solid fa-basket-shopping mr-2"></i>
-                <span>View Cart</span>
+                <span>{`View Cart ${cartQuantity > 0 ? "(" + cartQuantity + ")" : ""}`}</span>
             </Link>
             <Snackbar
                 open={snackBarOpen}
