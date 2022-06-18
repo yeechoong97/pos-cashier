@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getCartItems } from '../redux/reducers/cartSlice';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateCart } from '../redux/reducers/cartSlice';
 import { Link } from 'react-router-dom'
+import ModalPayment from './ModalPayment';
+import { computeCartTotal } from '../calculation';
 
 // Adjust the quantity of an item in the cart
 const QuantityAdjust = ({ item }) => {
@@ -41,43 +43,38 @@ const TableItem = ({ item }) => (
         <td className='py-3'>
             <QuantityAdjust item={item} />
         </td>
-        <td className='py-3'>{item.price * item.quantity}</td>
+        <td className='py-3'>{(item.price * item.quantity).toFixed(2)}</td>
     </tr>
 )
 
 // The calculation item component for each row
-const CalculationItemSection = ({ title, amount, divider }) => (
+const CalculationItemSection = ({ title, amount, divider, total }) => (
     <div className={`flex flex-row justify-between px-16 my-2 font-semibold w-full ${divider ? "border-b-2 border-gray-400" : ""}`}>
-        <div className={`${divider ? "pb-2" : ""} `}>{title}</div>
-        <div className={`${divider ? "pb-2" : ""} `}>{amount}</div>
+        <div className={`${divider ? "pb-2" : ""} ${total ? "font-bold text-lg" : ""}`}>{title}</div>
+        <div className={`${divider ? "pb-2" : ""}  ${total ? "font-bold text-lg" : ""}`}>{total ? `RM ${amount}` : amount}</div>
     </div>
 )
 
 // The bottom section component that displays the calculation of whole cart
 const CalculationSection = ({ items }) => {
 
-    const subtotal = items.reduce((previousItem, currentItem) => previousItem + currentItem.price * currentItem.quantity, 0);
-    const itemQuantity = items.length;
-    const tax = subtotal * 0.06;
-    const serviceCharge = subtotal * 0.1;
-    const total = subtotal + tax + serviceCharge;
+    const { subtotal, itemQuantity, tax, serviceCharge, total } = computeCartTotal(items);
 
     return (
         <div className='flex flex-col justify-center items-center my-5'>
-            <CalculationItemSection title="Subtotal" amount={subtotal.toFixed(2)} />
+            <CalculationItemSection title="Subtotal" amount={subtotal} />
             <CalculationItemSection title="No. of items" amount={itemQuantity} />
-            <CalculationItemSection title="Tax" amount={tax.toFixed(2)} />
-            <CalculationItemSection title="Service Charge" amount={serviceCharge.toFixed(2)} divider />
-            <CalculationItemSection title="Total" amount={total.toFixed(2)} />
+            <CalculationItemSection title="Tax" amount={tax} />
+            <CalculationItemSection title="Service Charge" amount={serviceCharge} divider />
+            <CalculationItemSection title="Total" amount={total} total />
         </div>
     )
 }
 
 
 const CartItemList = () => {
-
     const { cartItems } = useSelector(getCartItems);
-    console.log(cartItems.length)
+    const [modal, setModal] = useState(false);
 
     return (
         <div className='border-2 border-gray-400 w-1/2 h-full rounded-lg border-collapse p-3 my-5'>
@@ -112,9 +109,12 @@ const CartItemList = () => {
             }
             <div className='flex flex-row justify-evenly items-center'>
                 <Link className="bg-red-500 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-md mt-4" to="/">Cancel</Link>
-                <button className="bg-green-500 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-md mt-4">Check out</button>
+                <button className={`${cartItems.length > 0 ? "bg-green-500 hover:bg-green-700" : "bg-gray-500"} text-white font-semibold py-3 px-8 rounded-md mt-4`} disabled={cartItems.length < 1} onClick={() => setModal(true)}>Check out</button>
             </div>
+            <ModalPayment open={modal} items={cartItems} setOpen={setModal} />
         </div>
+
+
 
     )
 }

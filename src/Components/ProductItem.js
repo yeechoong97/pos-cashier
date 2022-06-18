@@ -6,6 +6,7 @@ const ProductItem = ({ product }) => {
     const { description, price } = product;
     const dispatch = useDispatch();
 
+    // Add the product to the cart
     const handleAddToCart = (product) => {
         const cartItem = { ...product, quantity: 1 };
         dispatch(addToCart(cartItem));
@@ -20,10 +21,12 @@ const ProductItem = ({ product }) => {
             <div className='pt-1 font-medium font-sans text-xl self-start text-red-400'>
                 {`RM ${price}`}
             </div>
-            <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md mt-4"
-                onClick={() => handleAddToCart(product)}
-            >Add to Cart</button>
+            <div className='flex-col-reverse flex h-full justify-start mt-4'>
+                <button
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md "
+                    onClick={() => handleAddToCart(product)}>Add to Cart
+                </button>
+            </div>
         </div>
     )
 }
