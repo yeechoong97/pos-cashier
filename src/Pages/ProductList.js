@@ -1,5 +1,6 @@
 import React from 'react'
 import ProductItem from '../Components/ProductItem'
+import { productData } from '../data'
 
 const ProductList = () => {
     return (
@@ -8,7 +9,11 @@ const ProductList = () => {
                 <p className="text-2xl font-semibold">Products</p>
             </div>
             <div className="flex justify-evenly p-5 w-full flex-wrap">
-                <ProductItem />
+                {
+                    productData.map((item, index) => (
+                        <ProductItem product={item} key={index} />
+                    ))
+                }
             </div>
         </div>
     )
