@@ -1,44 +1,22 @@
 import React, { useState } from 'react'
-import { Modal } from '@mui/material'
+import { Modal, Snackbar, Alert, CircularProgress } from '@mui/material'
 import { computeCartTotal } from '../calculation';
-
-// For Label Purpose
-const OrderLabelDetails = ({ title, amount }) => (
-    <div className='w-full flex justify-between font-semibold'>
-        <p>{title}</p>
-        <p>RM {amount}</p>
-    </div>
-)
-
-// Input Payment Amount
-const OrderPayAmount = ({ paidAmount, setPaidAmount }) => (
-    <div className='w-full flex justify-between font-semibold'>
-        <p>Total</p>
-        <div>
-            <span>RM</span>
-            <input type='text' className='shadow appearance-none border rounded text-right py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2' value={`${paidAmount > 0 ? paidAmount : ""}`} onChange={setPaidAmount} placeholder="Enter Amount" />
-        </div>
-    </div>
-)
-
-// Select Payment Method
-const OrderPaymentMethod = ({ paymentMethod, setPaymentMethod }) => (
-    <div className='w-full flex justify-between font-semibold'>
-        <p>Payment Method</p>
-        <select className='shadow border rounded text-right py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2' value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
-            <option>Online Banking</option>
-            <option>Credit Card / Debit Card</option>
-            <option>E-Wallet</option>
-        </select>
-    </div>
-)
+import { OrderLabelDetails, OrderPayAmount, OrderPaymentMethod } from './PaymentComponent';
+import { useDispatch } from 'react-redux'
+import { resetCart } from '../redux/reducers/cartSlice';
+import { useNavigate } from 'react-router-dom'
 
 const ModalPayment = ({ open, items, setOpen }) => {
 
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { total } = computeCartTotal(items);
     const [paymentMethod, setPaymentMethod] = useState("Online Banking");
     const [paidAmount, setPaidAmount] = useState(0);
+    const [processPayment, setProcessPayment] = useState(false);
+    const [processLoading, setProcessLoading] = useState(false);
     const [change, setChange] = useState(paidAmount - total);
+
 
     const updatePaymentDetail = (event) => {
         const result = event.target.value.replace(/[^0-9]/g, '');
@@ -46,10 +24,25 @@ const ModalPayment = ({ open, items, setOpen }) => {
         setChange(result - total);
     }
 
+    const handleSubmit = () => {
+        setProcessLoading(true);
+
+        setTimeout(() => {
+            setProcessPayment(true);
+        }, 2000)
+
+
+        setTimeout(() => {
+            setOpen(false);
+            setProcessPayment(false);
+            setProcessLoading(false);
+            dispatch(resetCart());
+            navigate('/');
+        }, 4000);
+    }
+
     return (
-        <Modal
-            open={open}
-        >
+        <Modal open={open} >
             <div className='h-full w-full flex justify-center items-center'>
                 <div className='w-1/2 h-1/2 bg-white rounded-md flex flex-col items-center py-8 px-10 justify-around relative'>
                     <div className='w-full p-3 top-0 bg-slate-300 rounded-sm text-center font-semibold'>
@@ -62,14 +55,27 @@ const ModalPayment = ({ open, items, setOpen }) => {
 
                     <div className='w-full flex flew-row justify-end items-center'>
                         <button
-                            className="bg-red-500 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-md mx-2" onClick={() => setOpen(false)}>Close
+                            className="bg-red-500 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-md mx-2"
+                            disabled={processLoading}
+                            onClick={() => setOpen(false)}>Close
                         </button>
                         <button
-                            className={`${change < 0 ? "bg-gray-500" : "bg-green-500 hover:bg-green-700"} text-white font-semibold py-3 px-4 rounded-md mx-2`} disabled={change < 0}>Submit
+                            className="bg-green-500 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-md mx-2 align-middle"
+                            disabled={processLoading}
+                            onClick={() => handleSubmit()}>{processLoading ? <CircularProgress size={16} color="inherit" /> : "Submit"}
                         </button>
                     </div>
                 </div>
+
+                <Snackbar open={processPayment} autoHideDuration={3000} >
+                    {
+                        change < 0
+                            ? <Alert severity="warning" sx={{ width: '100%' }} variant="filled">Payment Unsuccessful due to Insuffienct Total Paid Amount </Alert>
+                            : <Alert severity="success" sx={{ width: '100%' }} color="success" variant="filled"> Payment Successfully. </Alert>
+                    }
+                </Snackbar>
             </div>
+
         </Modal >
     )
 }

@@ -4,7 +4,7 @@ import { productData } from '../data'
 import { Link } from 'react-router-dom'
 import { getCartItems } from '../redux/reducers/cartSlice'
 import { useSelector } from 'react-redux'
-import { Snackbar } from '@mui/material'
+import { Snackbar, Alert } from '@mui/material'
 import { computeCartTotal } from '../calculation'
 
 const ProductList = () => {
@@ -50,8 +50,11 @@ const ProductList = () => {
             <Snackbar
                 open={snackBarOpen}
                 autoHideDuration={2000}
-                message="Item added successfully."
-            />
+            >
+                <Alert severity="success" sx={{ width: '100%' }} color="success" variant="filled">
+                    Item added successfully.
+                </Alert>
+            </Snackbar>
         </div>
     )
 }

@@ -21,11 +21,14 @@ export const cartSlice = createSlice({
             if (existingItem.quantity === 0) {
                 state.cartItems = state.cartItems.filter((item) => item.description !== action.payload.description);
             }
+        },
+        resetCart: (state, action) => {
+            state.cartItems = [];
         }
     }
 })
 
-export const { addToCart, updateCart } = cartSlice.actions;
+export const { addToCart, updateCart, resetCart } = cartSlice.actions;
 
 export const getCartItems = state => state.cart;
 
