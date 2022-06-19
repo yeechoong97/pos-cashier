@@ -2,15 +2,19 @@ import React, { useState } from 'react'
 import { Modal, Snackbar, Alert, CircularProgress } from '@mui/material'
 import { computeCartTotal } from '../calculation';
 import { OrderLabelDetails, OrderPayAmount, OrderPaymentMethod } from './PaymentComponent';
-import { useDispatch } from 'react-redux'
-import { resetCart } from '../redux/reducers/cartSlice';
-import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { resetCart, getCartItems } from '../redux/reducers/cartSlice';
+import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, Timestamp, getDoc, updateDoc } from '@firebase/firestore'
+import { db } from '../firebase';
+import { v4 as uuidv4 } from 'uuid';
 
 const ModalPayment = ({ open, items, setOpen }) => {
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { total } = computeCartTotal(items);
+    const { cartItems } = useSelector(getCartItems);
+    const { total, tax, serviceCharge, } = computeCartTotal(items);
     const [paymentMethod, setPaymentMethod] = useState("Online Banking");
     const [paidAmount, setPaidAmount] = useState(0);
     const [processPayment, setProcessPayment] = useState(false);
@@ -24,8 +28,43 @@ const ModalPayment = ({ open, items, setOpen }) => {
         setChange(result - total);
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setProcessLoading(true);
+
+        const orderRef = await addDoc(collection(db, "orders"), {
+            reference_no: uuidv4(),
+            tax: tax,
+            service_charge: serviceCharge,
+            total_amount_cents: total,
+            status: "Pending",
+            timestamp: Timestamp.now(),
+        });
+
+
+        cartItems.forEach(async (item) => {
+            await addDoc(collection(orderRef, "order_items"), {
+                cost_per_item: item.price,
+                product_name: item.description,
+                quantity: item.quantity,
+            });
+        })
+
+        const transactionRef = await addDoc(collection(orderRef, "transactions"), {
+            paymentMethod: paymentMethod,
+            status: change < 0 ? "Pending" : "Paid",
+            paidAmount: paidAmount,
+        });
+
+        const transactionSnap = await getDoc(transactionRef);
+        if (transactionSnap.exists()) {
+            const { status } = transactionSnap.data();
+            if (status === "Paid") {
+                await updateDoc(orderRef, {
+                    status: "Paid",
+                })
+            }
+        }
+
 
         setTimeout(() => {
             setProcessPayment(true);
